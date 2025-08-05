@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model budgets {
+  id           String     @id @db.Uuid
+  project_id   String?    @db.Uuid
+  total_amount Decimal?   @db.Decimal
+  created_at   DateTime?  @db.Timestamp(6)
+  status       String?    @db.VarChar
+  pdf_url      String?    @db.VarChar
+  projects     projects?  @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  invoices     invoices[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model calendar_events {
+  id                 String               @id @db.Uuid
+  title              String?              @db.VarChar
+  description        String?
+  start_datetime     DateTime?            @db.Timestamp(6)
+  end_datetime       DateTime?            @db.Timestamp(6)
+  project_id         String?              @db.Uuid
+  event_type         String?              @db.VarChar
+  projects           projects?            @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  event_participants event_participants[]
+}
+
+model event_participants {
+  id                String           @id @db.Uuid
+  calendar_event_id String?          @db.Uuid
+  user_id           String?          @db.Uuid
+  calendar_events   calendar_events? @relation(fields: [calendar_event_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users             users?           @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model file_comments {
+  id        String    @id @db.Uuid
+  file_id   String?   @db.Uuid
+  user_id   String?   @db.Uuid
+  comment   String?
+  timestamp DateTime? @db.Timestamp(6)
+  files     files?    @relation(fields: [file_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users     users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model files {
+  id            String          @id @db.Uuid
+  project_id    String?         @db.Uuid
+  uploaded_by   String?         @db.Uuid
+  file_url      String?         @db.VarChar
+  filename      String?         @db.VarChar
+  version       Int?
+  tags          String[]
+  file_comments file_comments[]
+  projects      projects?       @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         users?          @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model invoices {
+  id           String    @id @db.Uuid
+  budget_id    String?   @db.Uuid
+  project_id   String?   @db.Uuid
+  amount       Decimal?  @db.Decimal
+  invoice_date DateTime? @db.Date
+  paid         Boolean?
+  pdf_url      String?   @db.VarChar
+  budgets      budgets?  @relation(fields: [budget_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  projects     projects? @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model organizations {
+  id            String          @id @db.Uuid
+  name          String?         @db.VarChar
+  branding_logo String?         @db.VarChar
+  created_at    DateTime?       @db.Timestamp(6)
+  projects      projects[]
+  subscriptions subscriptions[]
+  users         users[]
+  vendors       vendors[]
+}
+
+model project_members {
+  id              String    @id @db.Uuid
+  project_id      String?   @db.Uuid
+  user_id         String?   @db.Uuid
+  role_in_project String?   @db.VarChar
+  projects        projects? @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users           users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model project_phases {
+  id         String    @id @db.Uuid
+  project_id String?   @db.Uuid
+  name       String?   @db.VarChar
+  start_date DateTime? @db.Date
+  end_date   DateTime? @db.Date
+  projects   projects? @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tasks      tasks[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model projects {
+  id              String            @id @db.Uuid
+  name            String?           @db.VarChar
+  description     String?
+  status          String?           @db.VarChar
+  start_date      DateTime?         @db.Date
+  end_date        DateTime?         @db.Date
+  organization_id String?           @db.Uuid
+  created_by      String?           @db.Uuid
+  budgets         budgets[]
+  calendar_events calendar_events[]
+  files           files[]
+  invoices        invoices[]
+  project_members project_members[]
+  project_phases  project_phases[]
+  users           users?            @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organizations   organizations?    @relation(fields: [organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tasks           tasks[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model subscriptions {
+  id                 String         @id @db.Uuid
+  organization_id    String?        @db.Uuid
+  plan_type          String?        @db.VarChar
+  stripe_customer_id String?        @db.VarChar
+  next_billing_date  DateTime?      @db.Date
+  active             Boolean?
+  organizations      organizations? @relation(fields: [organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model task_comments {
+  id         String    @id @db.Uuid
+  task_id    String?   @db.Uuid
+  user_id    String?   @db.Uuid
+  content    String?
+  created_at DateTime? @db.Timestamp(6)
+  tasks      tasks?    @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model tasks {
+  id             String          @id @db.Uuid
+  title          String?         @db.VarChar
+  description    String?
+  status         String?         @db.VarChar
+  due_date       DateTime?       @db.Date
+  project_id     String?         @db.Uuid
+  assigned_to    String?         @db.Uuid
+  phase_id       String?         @db.Uuid
+  task_comments  task_comments[]
+  users          users?          @relation(fields: [assigned_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  project_phases project_phases? @relation(fields: [phase_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  projects       projects?       @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model users {
+  id                 String               @id @db.Uuid
+  name               String?              @db.VarChar
+  email              String?              @db.VarChar
+  password_hash      String?              @db.VarChar
+  role               String?              @db.VarChar
+  organization_id    String?              @db.Uuid
+  last_login         DateTime?            @db.Timestamp(6)
+  event_participants event_participants[]
+  file_comments      file_comments[]
+  files              files[]
+  project_members    project_members[]
+  projects           projects[]
+  task_comments      task_comments[]
+  tasks              tasks[]
+  organizations      organizations?       @relation(fields: [organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model vendors {
+  id              String         @id @db.Uuid
+  organization_id String?        @db.Uuid
+  name            String?        @db.VarChar
+  email           String?        @db.VarChar
+  service         String?        @db.VarChar
+  organizations   organizations? @relation(fields: [organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
