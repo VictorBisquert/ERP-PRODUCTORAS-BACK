@@ -6,6 +6,8 @@ import { UsersModule } from './users/users.module';
 import { FilesModule } from './files/files.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { FinanceModule } from './finance/finance.module';
+import { CompanyModule } from './company/company.module';
+import { PrismaService } from './prisma.service';
 @Module({
   imports: [
     ProjectsModule,
@@ -13,8 +15,9 @@ import { FinanceModule } from './finance/finance.module';
     FilesModule,
     CalendarModule,
     FinanceModule,
+    CompanyModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, PrismaService],
 })
 export class AppModule {}
